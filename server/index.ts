@@ -1,6 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { serveStatic, log } from "./vite";
 
 // Export the app for serverless environments (like Vercel)
 export const app = express();
@@ -50,6 +50,7 @@ export const initServer = async () => {
   });
 
   if (app.get("env") === "development") {
+    const { setupVite } = await import("./vite-dev");
     await setupVite(app, server);
   } else {
     serveStatic(app);
