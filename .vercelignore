@@ -1,9 +1,14 @@
 *
-!public/**/*
 !api/**/*
+!client/**/*
 !server/**/*
 !shared/**/*
+!public/**/*
 !package.json
 !package-lock.json
 !tsconfig.json
 !vercel.json
+!vite.config.ts
+!tailwind.config.ts
+!postcss.config.js
+!components.json
