@@ -55,9 +55,6 @@ export default function Sidebar() {
     selectTeamMutation.mutate(parseInt(teamId));
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
-  };
 
   return (
     <div className="w-64 bg-white shadow-lg border-r border-neutral-300 flex flex-col">
@@ -133,16 +130,8 @@ export default function Sidebar() {
             <p className="text-sm font-medium text-neutral-900">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="text-xs text-neutral-700">Team Member</p>
+            <p className="text-xs text-neutral-700">System Admin</p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-neutral-500 hover:text-neutral-700"
-          >
-            <Settings className="w-4 h-4" />
-          </Button>
         </div>
       </div>
     </div>

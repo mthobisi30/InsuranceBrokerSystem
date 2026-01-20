@@ -35,9 +35,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Mock Auth middleware
+  // Mock Auth middleware - injects a stable default user for all requests
   app.use(async (req: any, _res, next) => {
-    // Inject a default system user for all requests
     const defaultUserId = "system-user";
     let user = await storage.getUser(defaultUserId);
     
@@ -64,14 +63,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Auth routes
+  // Auth routes - just return the system user
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = await storage.getUser(req.user.claims.sub);
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
@@ -392,44 +389,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Initialize default teams if they don't exist
-  app.post('/api/setup', async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      
-      // Check if user already has teams
-      const userTeams = await storage.getUserTeams(userId);
-      if (userTeams.length > 0) {
-        return res.json({ message: "User already has teams" });
-      }
-
-      // Create default teams
-      const defaultTeams = [
-        { name: "Personal Lines", description: "Personal insurance operations" },
-        { name: "Commercial", description: "Commercial insurance operations" },
-        { name: "Corporate", description: "Corporate insurance operations" },
-        { name: "Claims", description: "Claims processing and management" }
-      ];
-
-      const createdTeams = [];
-      for (const teamData of defaultTeams) {
-        const team = await storage.createTeam(teamData);
-        await storage.addUserToTeam(userId, team.id, "member");
-        createdTeams.push(team);
-      }
-
-      // Set first team as current
-      if (createdTeams.length > 0) {
-        await storage.updateUserCurrentTeam(userId, createdTeams[0].id);
-      }
-
-      res.json({ teams: createdTeams });
-    } catch (error) {
-      console.error("Error setting up user:", error);
-      res.status(500).json({ message: "Failed to set up user" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;
