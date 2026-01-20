@@ -7,11 +7,7 @@
     },
     {
       "source": "/((?!api/).*)",
-      "destination": "/dist/public/$1"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/dist/public/index.html"
+      "destination": "/index.html"
     }
   ]
 }

@@ -1,0 +1,9 @@
+*
+!public/**/*
+!api/**/*
+!server/**/*
+!shared/**/*
+!package.json
+!package-lock.json
+!tsconfig.json
+!vercel.json
