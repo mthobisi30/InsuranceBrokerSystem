@@ -4,7 +4,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertDocumentSchema, insertTaskSchema, insertMeetingSchema, insertEmailArchiveSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -36,11 +35,37 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Mock Auth middleware
+  app.use(async (req: any, _res, next) => {
+    // Inject a default system user for all requests
+    const defaultUserId = "system-user";
+    let user = await storage.getUser(defaultUserId);
+    
+    if (!user) {
+      // Create a default team first
+      const defaultTeam = await storage.createTeam({
+        name: "Default Team",
+        description: "Auto-generated default team"
+      });
+
+      user = await storage.upsertUser({
+        id: defaultUserId,
+        email: "admin@system.local",
+        firstName: "System",
+        lastName: "Admin",
+        role: "admin",
+        currentTeamId: defaultTeam.id
+      });
+
+      await storage.addUserToTeam(user.id, defaultTeam.id, "admin");
+    }
+    
+    req.user = { claims: { sub: user.id } };
+    next();
+  });
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -52,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Team routes
-  app.get('/api/teams', isAuthenticated, async (req: any, res) => {
+  app.get('/api/teams', async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const teams = await storage.getUserTeams(userId);
@@ -63,7 +88,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/teams/:teamId/select', isAuthenticated, async (req: any, res) => {
+  app.post('/api/teams/:teamId/select', async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const teamId = parseInt(req.params.teamId);
@@ -76,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Dashboard routes
-  app.get('/api/dashboard/metrics', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/metrics', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -91,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/dashboard/recent-activity', isAuthenticated, async (req: any, res) => {
+  app.get('/api/dashboard/recent-activity', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -107,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Document routes
-  app.get('/api/documents', isAuthenticated, async (req: any, res) => {
+  app.get('/api/documents', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -123,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/documents/upload', isAuthenticated, upload.array('files'), async (req: any, res) => {
+  app.post('/api/documents/upload', upload.array('files'), async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -173,7 +198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/documents/search', isAuthenticated, async (req: any, res) => {
+  app.get('/api/documents/search', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -194,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Task routes
-  app.get('/api/tasks', isAuthenticated, async (req: any, res) => {
+  app.get('/api/tasks', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -210,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/tasks', isAuthenticated, async (req: any, res) => {
+  app.post('/api/tasks', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -242,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/tasks/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/tasks/:id', async (req: any, res) => {
     try {
       const taskId = parseInt(req.params.id);
       const updates = req.body;
@@ -270,7 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Meeting routes
-  app.get('/api/meetings', isAuthenticated, async (req: any, res) => {
+  app.get('/api/meetings', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -286,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/meetings', isAuthenticated, async (req: any, res) => {
+  app.post('/api/meetings', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -319,7 +344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Email archive routes
-  app.get('/api/email-archives', isAuthenticated, async (req: any, res) => {
+  app.get('/api/email-archives', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -335,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/email-archives', isAuthenticated, async (req: any, res) => {
+  app.post('/api/email-archives', async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.claims.sub);
       if (!user?.currentTeamId) {
@@ -368,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Initialize default teams if they don't exist
-  app.post('/api/setup', isAuthenticated, async (req: any, res) => {
+  app.post('/api/setup', async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);

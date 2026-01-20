@@ -251,7 +251,7 @@ export default function Tasks() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Priority</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="Select priority" />

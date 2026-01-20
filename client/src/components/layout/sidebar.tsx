@@ -78,9 +78,8 @@ export default function Sidebar() {
       <div className="p-4 border-b border-neutral-300">
         <label className="block text-sm font-medium text-neutral-700 mb-2">Current Team</label>
         <Select 
-          value={currentTeam?.id?.toString() || ""} 
+          value={currentTeam?.id?.toString()} 
           onValueChange={handleTeamChange}
-          disabled={selectTeamMutation.isPending}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select team" />
